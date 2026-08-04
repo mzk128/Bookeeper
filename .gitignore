@@ -1,0 +1,58 @@
+# Android Studio / IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Gradle and Kotlin generated files
+.gradle/
+.kotlin/
+**/build/
+
+# Local Android SDK configuration
+local.properties
+
+# Android build outputs and reports
+*.apk
+*.aab
+*.ap_
+*.dex
+*.hprof
+captures/
+lint-results*.html
+lint-results*.xml
+
+# Native build outputs
+.cxx/
+.externalNativeBuild/
+
+# Signing keys, credentials, and local secrets
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+key.properties
+keystore.properties
+secrets.properties
+.env
+.env.*
+!.env.example
+
+# SSH key pair accidentally created in the project root
+/bookeeper
+/bookeeper.pub
+
+# Optional service configuration should be supplied locally
+google-services.json
+
+# Operating system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp
+*~
