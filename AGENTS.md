@@ -26,7 +26,9 @@ JDK：17
 - 本地分支跟踪：`main` → `origin/main`
 - 当前应用为 Jetpack Compose 模板，`Hello Android!` 已在模拟器中运行成功。
 - Gradle 依赖已经整理，Navigation、Lifecycle ViewModel、Room 和 KSP 已接入并通过构建。
-- 下一任务：建立首页、账单、统计、设置页面和底部导航骨架。
+- 首页、账单、统计、设置页面、应用级 NavHost、Scaffold 和底部导航骨架已经建立。
+- `MainActivity` 目前只负责设置主题并承载 `BookeeperApp`。
+- 下一任务：用户完成模拟器导航验收后，建立 Room 账单数据层。
 
 当前构建基线：
 
@@ -37,6 +39,7 @@ JDK：17
 - Room 2.8.4
 - Java 源码和目标兼容级别 17
 - `testDebugUnitTest`、`lintDebug`、`assembleDebug` 已于 2026-08-04 通过
+- 导航骨架的 `testDebugUnitTest`、`lintDebug`、`assembleDebug` 已于 2026-08-04 通过
 
 ## 文件查看与搜索
 
@@ -171,13 +174,12 @@ git log -5 --oneline --decorate
 
 ## 下一阶段实施顺序
 
-1. 检查 Git 工作区并读取现有应用入口和主题配置。
-2. 定义类型安全或集中管理的顶级导航目的地。
-3. 创建应用级 `NavHost`、底部导航栏和四个页面占位界面。
-4. 修改 `MainActivity`，使其只负责设置主题和承载应用级界面。
-5. 补充与页面状态和导航相关的测试。
-6. 执行 `testDebugUnitTest`、`lintDebug` 和 `assembleDebug`，再交由用户在模拟器中人工验证。
-7. 页面骨架验收后，再开始设计 Room 实体、DAO、数据库版本和初始 migration 策略。
+1. 由用户在模拟器中确认应用启动、当前导航高亮和四个顶级页面切换正常。
+2. 检查 Git 工作区，读取现有 Room/KSP 配置并确定版本 1 schema 目录。
+3. 使用 `Long` 分值定义账单金额，并创建 Transaction、Category、Account 实体。
+4. 创建 DAO、`BookeeperDatabase` 和初始 Repository，不使用破坏性迁移。
+5. 为 DAO 查询、收支汇总和数据持久化增加内存数据库测试。
+6. 执行 `testDebugUnitTest`、`lintDebug`、`assembleDebug`；Room 仪器测试需要在线模拟器。
 
 ## 推荐验证顺序
 

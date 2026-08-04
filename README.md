@@ -14,7 +14,8 @@ Bookeeper 是一款面向 Android 手机的本地记账应用，用于记录每�
 - [x] 关联 GitHub 远程仓库并完成首次推送
 - [x] 整理 Gradle 和版本目录依赖
 - [x] 引入 Navigation、Room、ViewModel 等基础组件
-- [ ] 建立页面导航和应用主界面
+- [x] 建立首页、账单、统计、设置页面和底部导航骨架
+- [ ] 在模拟器中人工验证四个页面的导航交互
 - [ ] 建立 Room 本地数据库
 - [ ] 实现收入、支出的新增、修改和删除
 - [ ] 实现账单列表及筛选
@@ -86,28 +87,28 @@ app/src/main/java/com/example/bookeeper/MainActivity.kt
 - Room：2.8.4
 - Java 源码和目标兼容级别：17
 
-## 计划中的代码结构
+## 当前代码结构
 
 ```text
 com.example.bookeeper
 ├─ MainActivity.kt
 ├─ navigation
-├─ data
-│  ├─ local
-│  ├─ model
-│  └─ repository
+│  ├─ BookeeperNavHost.kt
+│  └─ TopLevelDestination.kt
 ├─ ui
-│  ├─ home
-│  ├─ ledger
-│  ├─ transaction
-│  ├─ statistics
-│  ├─ settings
-│  ├─ components
+│  ├─ BookeeperApp.kt
+│  ├─ home/HomeScreen.kt
+│  ├─ ledger/LedgerScreen.kt
+│  ├─ statistics/StatisticsScreen.kt
+│  ├─ settings/SettingsScreen.kt
+│  ├─ components/FeaturePlaceholderScreen.kt
+│  ├─ transaction（待创建）
 │  └─ theme
-└─ util
+├─ data（待创建）
+└─ util（待创建）
 ```
 
-目录将在相应功能开始实现时创建，当前未实现的目录不提前生成。
+`navigation` 和四个顶级页面骨架已经建立；数据层、记账页面和工具目录将在相应功能开始实现时创建。
 
 ## 开发环境
 
@@ -162,20 +163,28 @@ app/build/outputs/apk/debug/app-debug.apk
 - KSP 任务：执行成功
 - 调试 APK：生成成功
 
+最近一次导航骨架验证（2026-08-04）：
+
+- 顶级路由唯一性单元测试：通过
+- `testDebugUnitTest`：通过
+- `lintDebug`：通过
+- `assembleDebug`：通过
+- 模拟器人工交互：等待用户验证
+
 ## 下一步
 
-下一开发阶段为“页面导航骨架”，计划按以下顺序完成：
+下一开发阶段为“本地账单数据层”，开始前先在模拟器中完成四个底部导航项的人工验证，然后按以下顺序推进：
 
-1. 定义首页、账单、统计和设置四个顶级目的地。
-2. 创建应用级 `NavHost`、`Scaffold` 与底部导航栏。
-3. 为四个页面创建明确的占位界面，并将 `MainActivity` 改为应用入口容器。
-4. 为导航选择状态与关键交互补充测试。
-5. 在模拟器中回归验证，确保应用能够启动并在各页面之间切换。
+1. 定义账单类型、金额、分类、账户和时间等领域模型。
+2. 创建 Room `Transaction`、`Category`、`Account` 实体与 DAO。
+3. 建立版本为 1 的 `BookeeperDatabase`，并导出数据库 schema。
+4. 创建 Repository，向 ViewModel 提供 Flow 数据流。
+5. 使用内存数据库补充 DAO 和查询测试。
 
 本阶段的验收标准：
 
-- 现有 Gradle 依赖保持可构建，无新增冲突。
-- `testDebugUnitTest`、`lintDebug` 和 `assembleDebug` 通过。
-- 模拟器可以启动 Bookeeper。
-- 首页、账单、统计和设置页面可以通过底部导航切换。
-- 尚未实现的业务功能使用明确的占位状态，不伪装成可用功能。
+- 金额以 `Long` 保存最小货币单位“分”。
+- Room schema 版本从 1 开始并纳入版本控制。
+- DAO 支持新增、修改、删除、按时间查询和收支汇总。
+- 数据库与 Repository 测试通过。
+- `testDebugUnitTest`、`lintDebug` 和 `assembleDebug` 保持通过。

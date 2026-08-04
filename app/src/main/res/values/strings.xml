@@ -1,3 +1,34 @@
 <resources>
     <string name="app_name">Bookeeper</string>
+    <string name="navigation_home">首页</string>
+    <string name="navigation_ledger">账单</string>
+    <string name="navigation_statistics">统计</string>
+    <string name="navigation_settings">设置</string>
+
+    <string name="placeholder_status">页面骨架已就绪</string>
+    <string name="placeholder_planned_features">接下来将在这里实现</string>
+
+    <string name="home_placeholder_title">开始记录第一笔账</string>
+    <string name="home_placeholder_description">首页将汇总总余额、本月收入、本月支出，并展示最近的账单记录。</string>
+    <string name="home_feature_summary">本月收支与结余概览</string>
+    <string name="home_feature_recent">最近账单</string>
+    <string name="home_feature_quick_add">快速记一笔</string>
+
+    <string name="ledger_placeholder_title">暂无账单记录</string>
+    <string name="ledger_placeholder_description">完成本地数据库后，收入和支出记录会按日期显示在这里。</string>
+    <string name="ledger_feature_grouping">按日期分组的账单列表</string>
+    <string name="ledger_feature_filter">收入、支出、分类与日期筛选</string>
+    <string name="ledger_feature_manage">查看、修改和删除账单</string>
+
+    <string name="statistics_placeholder_title">暂无统计数据</string>
+    <string name="statistics_placeholder_description">产生账单数据后，这里将展示月度收支趋势和分类占比。</string>
+    <string name="statistics_feature_monthly">月度收入与支出汇总</string>
+    <string name="statistics_feature_trend">每日收支趋势</string>
+    <string name="statistics_feature_category">分类占比</string>
+
+    <string name="settings_placeholder_title">设置功能准备中</string>
+    <string name="settings_placeholder_description">设置页面将集中管理分类、默认货币、显示主题和数据备份。</string>
+    <string name="settings_feature_categories">收入与支出分类管理</string>
+    <string name="settings_feature_preferences">人民币与外观偏好</string>
+    <string name="settings_feature_backup">数据导入与导出</string>
 </resources>
