@@ -11,6 +11,9 @@ Bookeeper 是一款面向 Android 手机的本地记账应用，用于记录每�
 - [x] 创建并运行 Jetpack Compose `Hello Android!` 页面
 - [x] 确定第一版产品范围和技术架构
 - [x] 初始化 Git 版本控制并配置 `.gitignore`
+- [x] 关联 GitHub 远程仓库并完成首次推送
+- [x] 整理 Gradle 和版本目录依赖
+- [x] 引入 Navigation、Room、ViewModel 等基础组件
 - [ ] 建立页面导航和应用主界面
 - [ ] 建立 Room 本地数据库
 - [ ] 实现收入、支出的新增、修改和删除
@@ -73,6 +76,16 @@ app/src/main/java/com/example/bookeeper/MainActivity.kt
 
 当前模板使用 `compileSdk 37` 和 `targetSdk 37`。正式开发前计划确认本机 SDK 安装情况；如果不需要测试 Android 17 预览功能，则优先切换到稳定 SDK。
 
+当前基础依赖版本：
+
+- Android Gradle Plugin：9.3.1
+- Gradle Wrapper：9.5.0
+- KSP：2.3.10
+- Navigation Compose：2.9.8
+- Lifecycle：2.11.0
+- Room：2.8.4
+- Java 源码和目标兼容级别：17
+
 ## 计划中的代码结构
 
 ```text
@@ -109,6 +122,16 @@ JDK：17
 
 `local.properties` 是本机配置文件，不应提交到版本控制。
 
+## 版本控制
+
+- 远程仓库：[mzk128/Bookeeper](https://github.com/mzk128/Bookeeper)
+- 默认分支：`main`
+- 远程名称：`origin`
+- 远程协议：HTTPS
+- 首次推送：已完成
+
+开始开发前使用 `git status --short --branch` 检查工作区；功能完成并验证后再提交。除非明确执行发布步骤，否则本地提交不会自动推送到远程仓库。
+
 ## 构建与验证
 
 在 PowerShell 中进入项目根目录后，可以运行：
@@ -131,11 +154,28 @@ app/build/outputs/apk/debug/app-debug.apk
 .\gradlew.bat installDebug
 ```
 
+最近一次基础依赖验证（2026-08-04）：
+
+- `testDebugUnitTest`：通过
+- `lintDebug`：通过
+- `assembleDebug`：通过
+- KSP 任务：执行成功
+- 调试 APK：生成成功
+
 ## 下一步
 
-下一开发阶段将完成：
+下一开发阶段为“页面导航骨架”，计划按以下顺序完成：
 
-1. 整理 Gradle 和版本目录依赖。
-2. 引入 Navigation、Room、ViewModel 等组件。
-3. 创建应用主导航和首页、账单、统计、设置页面骨架。
-4. 保证项目可以构建并在模拟器中启动。
+1. 定义首页、账单、统计和设置四个顶级目的地。
+2. 创建应用级 `NavHost`、`Scaffold` 与底部导航栏。
+3. 为四个页面创建明确的占位界面，并将 `MainActivity` 改为应用入口容器。
+4. 为导航选择状态与关键交互补充测试。
+5. 在模拟器中回归验证，确保应用能够启动并在各页面之间切换。
+
+本阶段的验收标准：
+
+- 现有 Gradle 依赖保持可构建，无新增冲突。
+- `testDebugUnitTest`、`lintDebug` 和 `assembleDebug` 通过。
+- 模拟器可以启动 Bookeeper。
+- 首页、账单、统计和设置页面可以通过底部导航切换。
+- 尚未实现的业务功能使用明确的占位状态，不伪装成可用功能。

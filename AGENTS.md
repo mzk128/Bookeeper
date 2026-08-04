@@ -18,6 +18,26 @@ JDK：17
 
 项目本机的实际 SDK 路径以根目录 `local.properties` 中的 `sdk.dir` 为准。
 
+## 当前项目基线
+
+- Git 仓库已经初始化并完成首次 GitHub 推送。
+- 远程仓库：`https://github.com/mzk128/Bookeeper.git`
+- 默认分支：`main`
+- 本地分支跟踪：`main` → `origin/main`
+- 当前应用为 Jetpack Compose 模板，`Hello Android!` 已在模拟器中运行成功。
+- Gradle 依赖已经整理，Navigation、Lifecycle ViewModel、Room 和 KSP 已接入并通过构建。
+- 下一任务：建立首页、账单、统计、设置页面和底部导航骨架。
+
+当前构建基线：
+
+- Android Gradle Plugin 9.3.1 / Gradle 9.5.0
+- KSP 2.3.10
+- Navigation Compose 2.9.8
+- Lifecycle 2.11.0
+- Room 2.8.4
+- Java 源码和目标兼容级别 17
+- `testDebugUnitTest`、`lintDebug`、`assembleDebug` 已于 2026-08-04 通过
+
 ## 文件查看与搜索
 
 列出根目录文件：
@@ -45,12 +65,23 @@ Get-Content app\build.gradle.kts
 Get-Content app\src\main\java\com\example\bookeeper\MainActivity.kt
 ```
 
-项目已经初始化为 Git 仓库，可以使用以下命令查看工作区状态：
+项目已经初始化并关联远程仓库，可以使用以下命令检查状态：
 
 ```powershell
-git status --short
-git diff -- .gitignore README.md AGENTS.md
+git status --short --branch
+git remote -v
+git diff
+git diff --staged
 ```
+
+查看当前分支与最近提交：
+
+```powershell
+git branch --show-current
+git log -5 --oneline --decorate
+```
+
+提交前应先检查 `git diff`，提交后按需执行 `git push`。Agent 不得因为远程仓库已经配置就自动提交或推送。
 
 ## Gradle 命令
 
@@ -135,6 +166,18 @@ git diff -- .gitignore README.md AGENTS.md
 7. 删除账单、数据库或用户文件属于高风险操作，必须明确目标，并优先提供确认步骤或可恢复方案。
 8. README 中的进度只在功能实际完成并验证后更新为已完成。
 9. 除非用户明确要求，不执行发布、上传、推送、签名或对外发送操作。
+10. 引入依赖时统一在 `gradle/libs.versions.toml` 管理版本，避免在多个构建文件中重复硬编码版本号。
+11. 当前使用 AGP 9 的内置 Kotlin 支持，不额外添加旧的 `org.jetbrains.kotlin.android` 插件。
+
+## 下一阶段实施顺序
+
+1. 检查 Git 工作区并读取现有应用入口和主题配置。
+2. 定义类型安全或集中管理的顶级导航目的地。
+3. 创建应用级 `NavHost`、底部导航栏和四个页面占位界面。
+4. 修改 `MainActivity`，使其只负责设置主题和承载应用级界面。
+5. 补充与页面状态和导航相关的测试。
+6. 执行 `testDebugUnitTest`、`lintDebug` 和 `assembleDebug`，再交由用户在模拟器中人工验证。
+7. 页面骨架验收后，再开始设计 Room 实体、DAO、数据库版本和初始 migration 策略。
 
 ## 推荐验证顺序
 
