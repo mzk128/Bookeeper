@@ -37,8 +37,12 @@ JDK：17
 - 版本 1 `BookeeperDatabase`、默认数据初始化、Repository 和导出的 schema 已创建。
 - 首次建库包含 8 个支出分类、5 个收入分类和默认“现金”账户。
 - DAO、外键、筛选、汇总和初始化共 6 个模拟器仪器测试已通过。
+- `BookeeperApplication` 与 `DefaultAppContainer` 在应用生命周期内提供数据库和 Repository 单例。
+- 新增账单 ViewModel、表单校验和 Compose 页面已实现，可保存收入/支出到 Room。
+- 账单页已连接 Repository Flow，并显示真实账单、分类和账户名称。
+- 新增页是非顶级导航目的地，隐藏底部导航，保存成功后返回账单页。
 - 用户不需要手工创建 SQLite 文件；Room 将在应用运行时自动创建应用私有数据库。
-- 下一任务：创建应用级依赖容器和新增账单 ViewModel，将真实数据流接入页面。
+- 下一任务：人工录入验收，然后实现账单编辑、删除、筛选和首页汇总。
 
 本阶段开发起点：
 
@@ -58,6 +62,9 @@ JDK：17
 - Room KSP 编译和 DAO SQL 校验已于 2026-08-12 通过
 - `testDebugUnitTest`、`lintDebug`、`assembleDebug` 已于 2026-08-12 通过
 - `connectedDebugAndroidTest` 已于 2026-08-12 在 Pixel 7 Pro API 36 模拟器通过（6 项测试）
+- 新增账单阶段的 `testDebugUnitTest` 已于 2026-08-12 通过（14 项测试）
+- 新增账单阶段的 `connectedDebugAndroidTest` 已于 2026-08-12 通过（8 项测试）
+- `lintDebug`、`assembleDebug`、`installDebug` 与实际应用启动烟雾检查已于 2026-08-12 通过
 
 ## 文件查看与搜索
 
@@ -195,12 +202,12 @@ git log -5 --oneline --decorate
 
 ## 下一阶段实施顺序
 
-1. 创建应用级依赖容器，在应用生命周期内提供 `BookeeperDatabase` 和 Repository 单例。
-2. 创建新增账单 ViewModel、表单状态和输入校验。
-3. 实现新增收入/支出界面，并通过 Repository 保存到 Room。
-4. 将账单页面连接响应式 `Flow`，显示真实账单列表。
-5. 增加 ViewModel 单元测试及新增账单 UI/仪器测试。
-6. 执行 `testDebugUnitTest`、`lintDebug`、`assembleDebug` 和在线模拟器仪器测试。
+1. 由用户在模拟器中人工新增一笔收入和一笔支出，确认保存、返回与账单列表实时刷新正常。
+2. 创建账单详情/编辑 ViewModel 和页面，复用新增表单校验规则。
+3. 实现删除确认与 Repository 删除，并确保外键数据不被误删。
+4. 在账单页增加类型、分类、账户和日期范围筛选。
+5. 将首页连接月度汇总和最近账单 Flow。
+6. 增加编辑、删除、筛选和首页汇总测试，并执行完整验证序列。
 
 Room 数据层完成后的人工检查：
 

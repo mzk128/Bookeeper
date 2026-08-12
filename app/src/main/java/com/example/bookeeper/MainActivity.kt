@@ -13,7 +13,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             BookeeperTheme {
-                BookeeperApp()
+                BookeeperApp(
+                    repository = (application as BookeeperApplication).container.repository,
+                )
             }
         }
     }

@@ -11,7 +11,11 @@ import kotlinx.coroutines.flow.Flow
 interface BookeeperRepository {
     fun observeActiveCategories(type: TransactionType): Flow<List<Category>>
 
+    fun observeAllCategories(): Flow<List<Category>>
+
     fun observeActiveAccounts(): Flow<List<Account>>
+
+    fun observeAllAccounts(): Flow<List<Account>>
 
     fun observeTransactions(filter: TransactionFilter): Flow<List<TransactionRecord>>
 

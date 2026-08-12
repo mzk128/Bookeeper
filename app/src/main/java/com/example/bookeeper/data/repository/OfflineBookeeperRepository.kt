@@ -30,8 +30,14 @@ class OfflineBookeeperRepository(
     override fun observeActiveCategories(type: TransactionType): Flow<List<Category>> =
         categoryDao.observeActive(type).map { entities -> entities.map { it.toDomain() } }
 
+    override fun observeAllCategories(): Flow<List<Category>> =
+        categoryDao.observeAll().map { entities -> entities.map { it.toDomain() } }
+
     override fun observeActiveAccounts(): Flow<List<Account>> =
         accountDao.observeActive().map { entities -> entities.map { it.toDomain() } }
+
+    override fun observeAllAccounts(): Flow<List<Account>> =
+        accountDao.observeAll().map { entities -> entities.map { it.toDomain() } }
 
     override fun observeTransactions(
         filter: TransactionFilter,

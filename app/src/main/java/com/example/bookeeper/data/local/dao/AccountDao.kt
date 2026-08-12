@@ -32,6 +32,9 @@ interface AccountDao {
     )
     fun observeActive(): Flow<List<AccountEntity>>
 
+    @Query("SELECT * FROM accounts ORDER BY sortOrder ASC, id ASC")
+    fun observeAll(): Flow<List<AccountEntity>>
+
     @Query(
         """
         UPDATE accounts

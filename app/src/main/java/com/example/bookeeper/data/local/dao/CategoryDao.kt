@@ -36,6 +36,9 @@ interface CategoryDao {
     )
     fun observeActive(transactionType: TransactionType): Flow<List<CategoryEntity>>
 
+    @Query("SELECT * FROM categories ORDER BY transactionType ASC, sortOrder ASC, id ASC")
+    fun observeAll(): Flow<List<CategoryEntity>>
+
     @Query(
         """
         UPDATE categories
