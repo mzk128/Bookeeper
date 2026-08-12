@@ -19,6 +19,8 @@ class FakeBookeeperRepository(
     val accountsFlow = MutableStateFlow(accounts)
     val transactionsFlow = MutableStateFlow(transactions)
     var lastAddedTransaction: TransactionRecord? = null
+    var lastUpdatedTransaction: TransactionRecord? = null
+    var lastDeletedTransaction: TransactionRecord? = null
     var nextTransactionId: Long = 1L
     var addTransactionFailure: Throwable? = null
 
@@ -45,13 +47,28 @@ class FakeBookeeperRepository(
             }
         }
 
+    override fun observeTransaction(id: Long): Flow<TransactionRecord?> =
+        transactionsFlow.map { transactions -> transactions.firstOrNull { it.id == id } }
+
     override fun observeRecentTransactions(limit: Int): Flow<List<TransactionRecord>> =
         transactionsFlow.map { it.take(limit) }
 
     override fun observePeriodSummary(
         startMillis: Long,
         endExclusiveMillis: Long,
-    ): Flow<PeriodSummary> = throw UnsupportedOperationException()
+    ): Flow<PeriodSummary> = transactionsFlow.map { transactions ->
+        val inRange = transactions.filter {
+            it.occurredAtMillis >= startMillis && it.occurredAtMillis < endExclusiveMillis
+        }
+        PeriodSummary(
+            income = com.example.bookeeper.domain.model.Money(
+                inRange.filter { it.type == TransactionType.INCOME }.sumOf { it.amount.cents },
+            ),
+            expense = com.example.bookeeper.domain.model.Money(
+                inRange.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount.cents },
+            ),
+        )
+    }
 
     override suspend fun getCategory(id: Long): Category? =
         categoriesFlow.value.firstOrNull { it.id == id }
@@ -92,9 +109,20 @@ class FakeBookeeperRepository(
         return nextTransactionId
     }
 
-    override suspend fun updateTransaction(transaction: TransactionRecord): Boolean =
-        throw UnsupportedOperationException()
+    override suspend fun updateTransaction(transaction: TransactionRecord): Boolean {
+        val existing = transactionsFlow.value.indexOfFirst { it.id == transaction.id }
+        if (existing == -1) return false
+        lastUpdatedTransaction = transaction
+        transactionsFlow.value = transactionsFlow.value.toMutableList().apply {
+            set(existing, transaction)
+        }
+        return true
+    }
 
-    override suspend fun deleteTransaction(transaction: TransactionRecord): Boolean =
-        throw UnsupportedOperationException()
+    override suspend fun deleteTransaction(transaction: TransactionRecord): Boolean {
+        if (transactionsFlow.value.none { it.id == transaction.id }) return false
+        lastDeletedTransaction = transaction
+        transactionsFlow.value = transactionsFlow.value.filterNot { it.id == transaction.id }
+        return true
+    }
 }

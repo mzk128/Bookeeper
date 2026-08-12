@@ -80,6 +80,25 @@ internal fun AddTransactionContent(
     val form = uiState.form
     var showDatePicker by remember { mutableStateOf(false) }
 
+    if (form.isLoading) {
+        androidx.compose.foundation.layout.Box(modifier.fillMaxSize()) {
+            androidx.compose.material3.CircularProgressIndicator(
+                Modifier.align(androidx.compose.ui.Alignment.Center),
+            )
+        }
+        return
+    }
+
+    if (form.loadFailed) {
+        androidx.compose.foundation.layout.Box(modifier.fillMaxSize()) {
+            Text(
+                stringResource(R.string.transaction_not_found),
+                modifier = Modifier.align(androidx.compose.ui.Alignment.Center),
+            )
+        }
+        return
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()

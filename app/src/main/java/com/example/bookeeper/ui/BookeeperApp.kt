@@ -39,7 +39,12 @@ fun BookeeperApp(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     val currentTopLevelDestination = currentDestination.toTopLevelDestination()
-    val isAddTransaction = currentDestination?.route == AppDestination.ADD_TRANSACTION
+    val nonTopLevelTitle = when (currentDestination?.route) {
+        AppDestination.ADD_TRANSACTION -> R.string.add_transaction_title
+        AppDestination.TRANSACTION_DETAIL_PATTERN -> R.string.transaction_detail_title
+        AppDestination.EDIT_TRANSACTION_PATTERN -> R.string.edit_transaction_title
+        else -> null
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -48,16 +53,12 @@ fun BookeeperApp(
                 title = {
                     Text(
                         stringResource(
-                            if (isAddTransaction) {
-                                R.string.add_transaction_title
-                            } else {
-                                currentTopLevelDestination.labelResId
-                            },
+                            nonTopLevelTitle ?: currentTopLevelDestination.labelResId,
                         ),
                     )
                 },
                 navigationIcon = {
-                    if (isAddTransaction) {
+                    if (nonTopLevelTitle != null) {
                         IconButton(onClick = { navController.popBackStack() }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -69,7 +70,7 @@ fun BookeeperApp(
             )
         },
         bottomBar = {
-            if (!isAddTransaction) {
+            if (nonTopLevelTitle == null) {
                 BookeeperBottomBar(
                     currentDestination = currentDestination,
                     onDestinationSelected = navController::navigateToTopLevelDestination,

@@ -17,6 +17,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
+import java.util.Calendar
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class LedgerViewModelTest {
@@ -45,6 +46,42 @@ class LedgerViewModelTest {
             assertEquals("餐饮", item.categoryName)
             assertEquals("现金", item.accountName)
             assertEquals(Money(1_280L), item.amount)
+        }
+
+    @Test
+    fun combinedFilters_includeSelectedEndDateAndFilterTypeCategoryAccount() =
+        runTest(mainDispatcherRule.testDispatcher) {
+            val selectedDay = Calendar.getInstance().apply {
+                set(2026, Calendar.AUGUST, 12, 18, 0, 0)
+                set(Calendar.MILLISECOND, 0)
+            }.timeInMillis
+            val endOfSelectedDay = Calendar.getInstance().apply {
+                timeInMillis = selectedDay
+                set(Calendar.HOUR_OF_DAY, 23)
+                set(Calendar.MINUTE, 30)
+            }.timeInMillis
+            val repository = FakeBookeeperRepository(
+                categories = listOf(category()),
+                accounts = listOf(account()),
+                transactions = listOf(
+                    transaction().copy(id = 1L, occurredAtMillis = endOfSelectedDay),
+                    transaction().copy(id = 2L, type = TransactionType.INCOME, occurredAtMillis = endOfSelectedDay),
+                ),
+            )
+            val viewModel = LedgerViewModel(repository)
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect() }
+            advanceUntilIdle()
+
+            viewModel.selectType(TransactionType.EXPENSE)
+            viewModel.selectCategory(1L)
+            viewModel.selectAccount(1L)
+            viewModel.selectEndDate(selectedDay)
+            advanceUntilIdle()
+
+            assertEquals(listOf(1L), viewModel.uiState.value.items.map { it.id })
+            assertEquals(TransactionType.EXPENSE, viewModel.uiState.value.filter.type)
+            assertEquals(1L, viewModel.uiState.value.filter.categoryId)
+            assertEquals(1L, viewModel.uiState.value.filter.accountId)
         }
 
     private fun category() = Category(

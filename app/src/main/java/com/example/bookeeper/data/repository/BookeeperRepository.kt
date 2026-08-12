@@ -19,6 +19,8 @@ interface BookeeperRepository {
 
     fun observeTransactions(filter: TransactionFilter): Flow<List<TransactionRecord>>
 
+    fun observeTransaction(id: Long): Flow<TransactionRecord?>
+
     fun observeRecentTransactions(limit: Int): Flow<List<TransactionRecord>>
 
     fun observePeriodSummary(

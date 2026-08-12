@@ -49,6 +49,11 @@ class OfflineBookeeperRepository(
         accountId = filter.accountId,
     ).map { entities -> entities.map { it.toDomain() } }
 
+    override fun observeTransaction(id: Long): Flow<TransactionRecord?> {
+        require(id > 0L) { "Transaction id must be positive" }
+        return transactionDao.observeById(id).map { it?.toDomain() }
+    }
+
     override fun observeRecentTransactions(limit: Int): Flow<List<TransactionRecord>> {
         require(limit > 0) { "Recent transaction limit must be positive" }
         return transactionDao.observeRecent(limit).map { entities -> entities.map { it.toDomain() } }

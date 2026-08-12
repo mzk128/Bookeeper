@@ -42,6 +42,8 @@ data class TransactionFormState(
     val accountError: Boolean = false,
     val dateError: DateError? = null,
     val noteError: Boolean = false,
+    val isLoading: Boolean = false,
+    val loadFailed: Boolean = false,
     val isSaving: Boolean = false,
     val saveFailed: Boolean = false,
     val savedTransactionId: Long? = null,
@@ -55,30 +57,34 @@ data class AddTransactionUiState(
 
 class AddTransactionViewModel(
     private val repository: BookeeperRepository,
+    private val transactionId: Long? = null,
     private val nowMillis: () -> Long = System::currentTimeMillis,
 ) : ViewModel() {
+    private var originalTransaction: TransactionRecord? = null
     private val formState = MutableStateFlow(
-        TransactionFormState(occurredAtMillis = nowMillis()),
+        TransactionFormState(
+            occurredAtMillis = nowMillis(),
+            isLoading = transactionId != null,
+        ),
     )
 
-    private val expenseCategories = repository.observeActiveCategories(TransactionType.EXPENSE)
+    private val allCategories = repository.observeAllCategories()
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    private val incomeCategories = repository.observeActiveCategories(TransactionType.INCOME)
-        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
-
-    private val accounts = repository.observeActiveAccounts()
+    private val allAccounts = repository.observeAllAccounts()
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     val uiState: StateFlow<AddTransactionUiState> = combine(
         formState,
-        expenseCategories,
-        incomeCategories,
-        accounts,
-    ) { form, availableExpenseCategories, availableIncomeCategories, availableAccounts ->
-        val availableCategories = when (form.type) {
-            TransactionType.EXPENSE -> availableExpenseCategories
-            TransactionType.INCOME -> availableIncomeCategories
+        allCategories,
+        allAccounts,
+    ) { form, categories, accounts ->
+        val availableCategories = categories.filter { category ->
+            category.transactionType == form.type &&
+                (!category.isArchived || category.id == form.selectedCategoryId)
+        }
+        val availableAccounts = accounts.filter { account ->
+            !account.isArchived || account.id == form.selectedAccountId
         }
         val categoryId = form.selectedCategoryId
             ?.takeIf { selected -> availableCategories.any { it.id == selected } }
@@ -110,6 +116,35 @@ class AddTransactionViewModel(
             accounts = emptyList(),
         ),
     )
+
+    init {
+        if (transactionId != null) {
+            viewModelScope.launch {
+                runCatching { repository.getTransaction(transactionId) }
+                    .onSuccess { transaction ->
+                        originalTransaction = transaction
+                        formState.value = if (transaction == null) {
+                            formState.value.copy(isLoading = false, loadFailed = true)
+                        } else {
+                            TransactionFormState(
+                                type = transaction.type,
+                                amountInput = BigDecimal.valueOf(
+                                    transaction.amount.cents,
+                                    2,
+                                ).stripTrailingZeros().toPlainString(),
+                                selectedCategoryId = transaction.categoryId,
+                                selectedAccountId = transaction.accountId,
+                                occurredAtMillis = transaction.occurredAtMillis,
+                                note = transaction.note,
+                            )
+                        }
+                    }
+                    .onFailure {
+                        formState.update { it.copy(isLoading = false, loadFailed = true) }
+                    }
+            }
+        }
+    }
 
     fun selectType(type: TransactionType) {
         formState.update {
@@ -160,11 +195,13 @@ class AddTransactionViewModel(
         val form = formState.value
         if (form.isSaving || form.savedTransactionId != null) return
 
-        val availableCategories = when (form.type) {
-            TransactionType.EXPENSE -> expenseCategories.value
-            TransactionType.INCOME -> incomeCategories.value
+        val availableCategories = allCategories.value.filter { category ->
+            category.transactionType == form.type &&
+                (!category.isArchived || category.id == form.selectedCategoryId)
         }
-        val availableAccounts = accounts.value
+        val availableAccounts = allAccounts.value.filter { account ->
+            !account.isArchived || account.id == form.selectedAccountId
+        }
         val categoryId = form.selectedCategoryId
             ?.takeIf { selected -> availableCategories.any { it.id == selected } }
             ?: availableCategories.firstOrNull()?.id
@@ -199,19 +236,24 @@ class AddTransactionViewModel(
         viewModelScope.launch {
             runCatching {
                 val now = nowMillis()
-                repository.addTransaction(
-                    TransactionRecord(
-                        id = 0L,
+                val original = originalTransaction
+                val transaction = TransactionRecord(
+                        id = original?.id ?: 0L,
                         type = form.type,
                         amount = Money(amountInCents),
                         categoryId = validCategoryId,
                         accountId = validAccountId,
                         note = form.note.trim(),
                         occurredAtMillis = form.occurredAtMillis,
-                        createdAtMillis = now,
+                        createdAtMillis = original?.createdAtMillis ?: now,
                         updatedAtMillis = now,
-                    ),
-                )
+                    )
+                if (original == null) {
+                    repository.addTransaction(transaction)
+                } else {
+                    check(repository.updateTransaction(transaction))
+                    transaction.id
+                }
             }.onSuccess { id ->
                 formState.update { it.copy(isSaving = false, savedTransactionId = id) }
             }.onFailure {
@@ -226,6 +268,13 @@ class AddTransactionViewModel(
 
         fun factory(repository: BookeeperRepository): ViewModelProvider.Factory = viewModelFactory {
             initializer { AddTransactionViewModel(repository) }
+        }
+
+        fun factory(
+            repository: BookeeperRepository,
+            transactionId: Long,
+        ): ViewModelProvider.Factory = viewModelFactory {
+            initializer { AddTransactionViewModel(repository, transactionId) }
         }
 
         internal fun parseAmountInCents(input: String): Result<Long> {
