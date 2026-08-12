@@ -20,6 +20,7 @@ JDK：17
 
 ## 当前项目基线
 
+- 基线检查日期：2026-08-12。
 - Git 仓库已经初始化并完成首次 GitHub 推送。
 - 远程仓库：`https://github.com/mzk128/Bookeeper.git`
 - 默认分支：`main`
@@ -27,8 +28,22 @@ JDK：17
 - 当前应用为 Jetpack Compose 模板，`Hello Android!` 已在模拟器中运行成功。
 - Gradle 依赖已经整理，Navigation、Lifecycle ViewModel、Room 和 KSP 已接入并通过构建。
 - 首页、账单、统计、设置页面、应用级 NavHost、Scaffold 和底部导航骨架已经建立。
+- 用户已在模拟器中确认应用启动、导航高亮、顶部标题和四个页面切换正常。
 - `MainActivity` 目前只负责设置主题并承载 `BookeeperApp`。
-- 下一任务：用户完成模拟器导航验收后，建立 Room 账单数据层。
+- 四个顶级页面目前是占位界面，尚未读取或写入真实账单数据。
+- `.gitattributes` 已统一文本文件与 Windows 脚本的换行规则。
+- 金额、收支类型、分类、账户和账单领域模型已经创建；金额使用 `Long` 分值。
+- Room Entity、类型转换器、映射器和三个 DAO 已创建，并已通过 KSP 的 SQL 编译校验。
+- 版本 1 `BookeeperDatabase`、默认数据初始化、Repository 和导出的 schema 已创建。
+- 首次建库包含 8 个支出分类、5 个收入分类和默认“现金”账户。
+- DAO、外键、筛选、汇总和初始化共 6 个模拟器仪器测试已通过。
+- 用户不需要手工创建 SQLite 文件；Room 将在应用运行时自动创建应用私有数据库。
+- 下一任务：创建应用级依赖容器和新增账单 ViewModel，将真实数据流接入页面。
+
+本阶段开发起点：
+
+- 起点提交：`04832d5 feat: add app navigation skeleton`
+- 首次暂存 `.gitattributes` 规则后需要执行 `git add --renormalize .` 并检查换行差异
 
 当前构建基线：
 
@@ -38,8 +53,11 @@ JDK：17
 - Lifecycle 2.11.0
 - Room 2.8.4
 - Java 源码和目标兼容级别 17
-- `testDebugUnitTest`、`lintDebug`、`assembleDebug` 已于 2026-08-04 通过
-- 导航骨架的 `testDebugUnitTest`、`lintDebug`、`assembleDebug` 已于 2026-08-04 通过
+- 导航骨架已于 2026-08-12 完成人工模拟器验收
+- 领域模型和类型转换器单元测试已于 2026-08-12 通过
+- Room KSP 编译和 DAO SQL 校验已于 2026-08-12 通过
+- `testDebugUnitTest`、`lintDebug`、`assembleDebug` 已于 2026-08-12 通过
+- `connectedDebugAndroidTest` 已于 2026-08-12 在 Pixel 7 Pro API 36 模拟器通过（6 项测试）
 
 ## 文件查看与搜索
 
@@ -171,15 +189,28 @@ git log -5 --oneline --decorate
 9. 除非用户明确要求，不执行发布、上传、推送、签名或对外发送操作。
 10. 引入依赖时统一在 `gradle/libs.versions.toml` 管理版本，避免在多个构建文件中重复硬编码版本号。
 11. 当前使用 AGP 9 的内置 Kotlin 支持，不额外添加旧的 `org.jetbrains.kotlin.android` 插件。
+12. Room 实际数据库文件属于运行时数据，不加入仓库；需要纳入版本控制的是导出的 `app/schemas/*.json` schema 文件。
+13. 版本 1 数据库不得启用 `fallbackToDestructiveMigration()`；后续每次 schema 变更都必须增加版本号和可验证的 migration。
+14. 出现 `LF will be replaced by CRLF` 时先检查 `.gitattributes`、`core.autocrlf` 和 `git ls-files --eol`，不要仅为消除警告而批量改写源文件。
 
 ## 下一阶段实施顺序
 
-1. 由用户在模拟器中确认应用启动、当前导航高亮和四个顶级页面切换正常。
-2. 检查 Git 工作区，读取现有 Room/KSP 配置并确定版本 1 schema 目录。
-3. 使用 `Long` 分值定义账单金额，并创建 Transaction、Category、Account 实体。
-4. 创建 DAO、`BookeeperDatabase` 和初始 Repository，不使用破坏性迁移。
-5. 为 DAO 查询、收支汇总和数据持久化增加内存数据库测试。
-6. 执行 `testDebugUnitTest`、`lintDebug`、`assembleDebug`；Room 仪器测试需要在线模拟器。
+1. 创建应用级依赖容器，在应用生命周期内提供 `BookeeperDatabase` 和 Repository 单例。
+2. 创建新增账单 ViewModel、表单状态和输入校验。
+3. 实现新增收入/支出界面，并通过 Repository 保存到 Room。
+4. 将账单页面连接响应式 `Flow`，显示真实账单列表。
+5. 增加 ViewModel 单元测试及新增账单 UI/仪器测试。
+6. 执行 `testDebugUnitTest`、`lintDebug`、`assembleDebug` 和在线模拟器仪器测试。
+
+Room 数据层完成后的人工检查：
+
+```text
+启动 API 26+ 模拟器
+→ 运行 Bookeeper
+→ View > Tool Windows > App Inspection
+→ Database Inspector
+→ 选择 Bookeeper 进程并检查 bookeeper.db
+```
 
 ## 推荐验证顺序
 

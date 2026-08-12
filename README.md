@@ -4,7 +4,13 @@ Bookeeper 是一款面向 Android 手机的本地记账应用，用于记录每�
 
 ## 当前状态
 
-项目目前处于基础工程阶段。
+截至 2026-08-12，项目已完成应用导航骨架和 Room 本地数据层第一版，包括领域模型、版本 1 数据库、内置数据、Repository、schema 与仪器测试。下一步开始接入 ViewModel 和真实记账流程。
+
+本阶段开发起点：
+
+- 本地分支：`main`
+- 远程跟踪分支：`origin/main`
+- 起点提交：`04832d5 feat: add app navigation skeleton`
 
 - [x] 创建 Android 项目
 - [x] 配置 Android SDK
@@ -15,8 +21,14 @@ Bookeeper 是一款面向 Android 手机的本地记账应用，用于记录每�
 - [x] 整理 Gradle 和版本目录依赖
 - [x] 引入 Navigation、Room、ViewModel 等基础组件
 - [x] 建立首页、账单、统计、设置页面和底部导航骨架
-- [ ] 在模拟器中人工验证四个页面的导航交互
-- [ ] 建立 Room 本地数据库
+- [x] 在模拟器中人工验证应用启动、导航高亮、顶部标题和四个页面切换
+- [x] 添加 `.gitattributes` 并统一仓库换行符规则
+- [x] 定义账单、金额、分类、账户和时间领域模型
+- [x] 创建 Room `Transaction`、`Category`、`Account` Entity 与 DAO
+- [x] 建立版本 1 Room 本地数据库并导出 schema
+- [x] 添加第一版内置分类和默认现金账户
+- [x] 创建 Repository 并提供 Flow 数据流
+- [x] 完成 DAO、外键、筛选、汇总和初始化仪器测试
 - [ ] 实现收入、支出的新增、修改和删除
 - [ ] 实现账单列表及筛选
 - [ ] 实现首页收支汇总
@@ -29,6 +41,14 @@ Bookeeper 是一款面向 Android 手机的本地记账应用，用于记录每�
 ```text
 app/src/main/java/com/example/bookeeper/MainActivity.kt
 ```
+
+当前已实现的应用行为：
+
+- `MainActivity` 设置 Material 3 主题并承载 `BookeeperApp`。
+- 应用级 `Scaffold` 提供顶部标题和底部导航栏。
+- 应用级 `NavHost` 管理首页、账单、统计和设置四个顶级目的地。
+- 四个页面均为明确的占位界面，尚未连接真实账单数据。
+- 底部导航使用保存/恢复状态和 `launchSingleTop`，避免重复创建顶级页面。
 
 ## 第一版目标
 
@@ -60,7 +80,25 @@ app/src/main/java/com/example/bookeeper/MainActivity.kt
 - `Category`：餐饮、交通、工资等收支分类。
 - `Account`：现金、银行卡、支付宝、微信等账户。
 
-金额计划使用 `Long` 保存最小货币单位“分”，避免使用浮点数产生精度误差。例如，`25.68` 元在数据库中保存为 `2568` 分。
+金额使用 `Long` 保存最小货币单位“分”，避免使用浮点数产生精度误差。例如，`25.68` 元在数据库中保存为 `2568` 分。单笔账单金额始终为正数，由 `INCOME` 或 `EXPENSE` 决定收支方向；账户初始余额和汇总差额允许为负数。
+
+当前数据设计采用以下第一版约定：
+
+- 收支类型使用稳定字符串 `income`、`expense` 持久化，避免枚举名称重构直接破坏旧数据。
+- 分类区分收入与支出类型；账户支持现金、银行卡、支付宝、微信和其他类型。
+- 一笔账单关联一个分类和一个账户，时间以 Unix epoch 毫秒保存。
+- 已被账单引用的分类和账户不能直接删除，日常管理使用“归档”，以保留历史记录。
+- 时间区间查询统一使用 `[开始时间, 结束时间)`，避免相邻日期范围重复计算边界账单。
+
+版本 1 本地数据层已经完成：
+
+- `BookeeperDatabase` 包含账单、分类和账户三张表，不启用破坏性迁移。
+- Room schema 已导出到 `app/schemas/com.example.bookeeper.data.local.BookeeperDatabase/1.json` 并供迁移测试复用。
+- 首次建库同步写入 8 个支出分类、5 个收入分类和默认“现金”账户；固定 ID 与 `INSERT OR IGNORE` 保证初始化稳定且幂等。
+- `BookeeperRepository` 与 `OfflineBookeeperRepository` 向后续 ViewModel 提供领域对象、CRUD 和响应式 `Flow`。
+- 模拟器内存数据库测试已覆盖 CRUD、外键约束、组合筛选、半开时间区间和期间收支汇总。
+
+实际 `bookeeper.db` 不需要开发者手工创建；后续应用入口首次获取 `BookeeperDatabase` 实例时，会在手机或模拟器的应用私有目录中自动生成。
 
 ## 技术方案
 
@@ -95,6 +133,17 @@ com.example.bookeeper
 ├─ navigation
 │  ├─ BookeeperNavHost.kt
 │  └─ TopLevelDestination.kt
+├─ domain/model
+│  ├─ Money.kt、TransactionType.kt、TransactionRecord.kt
+│  └─ Category.kt、Account.kt、AccountType.kt
+├─ data
+│  ├─ local/BookeeperDatabase.kt、DefaultDataCallback.kt
+│  ├─ local/converter/BookeeperTypeConverters.kt
+│  ├─ local/entity/TransactionEntity.kt、CategoryEntity.kt、AccountEntity.kt
+│  ├─ local/dao/TransactionDao.kt、CategoryDao.kt、AccountDao.kt
+│  ├─ local/model/PeriodSummary.kt
+│  ├─ mapper/EntityMappers.kt
+│  └─ repository/BookeeperRepository.kt、OfflineBookeeperRepository.kt
 ├─ ui
 │  ├─ BookeeperApp.kt
 │  ├─ home/HomeScreen.kt
@@ -104,11 +153,10 @@ com.example.bookeeper
 │  ├─ components/FeaturePlaceholderScreen.kt
 │  ├─ transaction（待创建）
 │  └─ theme
-├─ data（待创建）
 └─ util（待创建）
 ```
 
-`navigation` 和四个顶级页面骨架已经建立；数据层、记账页面和工具目录将在相应功能开始实现时创建。
+`navigation`、四个顶级页面骨架和 Room 本地数据层已经建立；ViewModel、依赖容器和真实记账页面尚待实现。
 
 ## 开发环境
 
@@ -130,8 +178,11 @@ JDK：17
 - 远程名称：`origin`
 - 远程协议：HTTPS
 - 首次推送：已完成
+- 本阶段开发起点：`04832d5 feat: add app navigation skeleton`
 
 开始开发前使用 `git status --short --branch` 检查工作区；功能完成并验证后再提交。除非明确执行发布步骤，否则本地提交不会自动推送到远程仓库。
+
+仓库级 `.gitattributes` 已规定 Kotlin、Gradle、XML、JSON、Markdown 等文本文件使用 LF，Windows 命令脚本使用 CRLF，图片和 JAR 等资源按二进制处理。首次应用规则时应使用 `git add --renormalize .`，并在提交前检查暂存差异。
 
 ## 构建与验证
 
@@ -163,23 +214,34 @@ app/build/outputs/apk/debug/app-debug.apk
 - KSP 任务：执行成功
 - 调试 APK：生成成功
 
-最近一次导航骨架验证（2026-08-04）：
+最近一次导航骨架验证（2026-08-12）：
 
 - 顶级路由唯一性单元测试：通过
 - `testDebugUnitTest`：通过
 - `lintDebug`：通过
 - `assembleDebug`：通过
-- 模拟器人工交互：等待用户验证
+- 模拟器人工交互：用户已确认应用启动、当前导航高亮、顶部标题和四个页面切换正常
+
+最近一次领域模型与 Room Entity/DAO 验证（2026-08-12）：
+
+- 金额、账单约束和类型转换器单元测试：通过
+- Room KSP 编译及 DAO SQL 校验：通过
+- `testDebugUnitTest`：通过
+- `lintDebug`：通过
+- `assembleDebug`：通过
+- `BookeeperDatabase` 版本 1 schema：生成成功
+- 默认数据初始化、CRUD、外键、筛选和汇总仪器测试：6 项全部通过
+- `connectedDebugAndroidTest`：通过（Pixel 7 Pro API 36 模拟器）
 
 ## 下一步
 
-下一开发阶段为“本地账单数据层”，开始前先在模拟器中完成四个底部导航项的人工验证，然后按以下顺序推进：
+下一开发阶段为“数据层接入与新增账单”，计划按以下顺序推进：
 
-1. 定义账单类型、金额、分类、账户和时间等领域模型。
-2. 创建 Room `Transaction`、`Category`、`Account` 实体与 DAO。
-3. 建立版本为 1 的 `BookeeperDatabase`，并导出数据库 schema。
-4. 创建 Repository，向 ViewModel 提供 Flow 数据流。
-5. 使用内存数据库补充 DAO 和查询测试。
+1. 创建应用级依赖容器，在应用生命周期内提供数据库和 Repository 单例。
+2. 创建新增账单 ViewModel 与表单状态，处理金额输入、分类、账户、日期和备注校验。
+3. 实现新增收入/支出界面并保存到 Room。
+4. 将账单页连接 Repository 的 Flow，显示真实账单列表。
+5. 增加 ViewModel 单元测试和新增账单 Compose/仪器测试。
 
 本阶段的验收标准：
 
@@ -187,4 +249,5 @@ app/build/outputs/apk/debug/app-debug.apk
 - Room schema 版本从 1 开始并纳入版本控制。
 - DAO 支持新增、修改、删除、按时间查询和收支汇总。
 - 数据库与 Repository 测试通过。
+- 不启用 `fallbackToDestructiveMigration()`，避免升级时静默清空账单。
 - `testDebugUnitTest`、`lintDebug` 和 `assembleDebug` 保持通过。
